@@ -371,7 +371,7 @@ void CLSB_MFCDlg::OnButtonLsb()
 			}
 			else{
 			//稳相算法输出结果
-				int poc_num = (*(buffer+4) & 0x0F << 4) | (*(buffer+7) & 0xF0) >> 4;
+				int poc_num = ((*(buffer+4) & 0x0F) << 4) | (*(buffer+7) & 0xF0) >> 4;
 				int dac_value = *(buffer+6) | (*(buffer+7) & 0x0F) << 8;
 				fprintf(fpps,"逻辑计算结果：POC:%d\tPM电压%d\t%f\t\n",poc_num,dac_value,(dac_value-2048)*5.0/4096.0);
 			}
