@@ -1078,103 +1078,50 @@ void CLSB_MFCDlg::OnSynApdDiff()
 	FILE *fpsyn_apd;
 	fpfixed = fopen(recvfixfilepath,"rb");
 	fpsyn_apd = fopen(recvsyn_apd_filepath,"w");
-	int *syn_apd_diff_cnt;
-	syn_apd_diff_cnt = (int*)malloc(4*100000000);
-	memset(syn_apd_diff_cnt,0,100000000*4);
-	__int64 syn_apd_diff;
-	__int64 *syn;
-	__int64 *apd[4];
-	syn = (__int64 *)malloc(10003*8);
-	apd[0]=(__int64*)malloc(10*8);
-	apd[1]=(__int64*)malloc(10000*8);
-	apd[2]=(__int64*)malloc(10000*8);
-	apd[3]=(__int64*)malloc(10*8);
-	int syn_cnt=0,apd_cnt[4];
-	int cnt_tab[4];
-	memset(cnt_tab,0,sizeof(int)*4);
-	memset(apd_cnt,0,sizeof(int)*4);
-	int i,j,k;
-	int cnt1=0,cnt2=0;
-	unsigned char buffer[9];
-	
-	while(fread(buffer,1,9,fpfixed)==9)
-	{
-		if(syn_cnt > 10000)
+int *syn_apd_diff_cnt;
+	 	syn_apd_diff_cnt = (int*)malloc(4*100000000);
+	 	memset(syn_apd_diff_cnt,0,100000000*4);
+	 	__int64 syn_apd_diff;
+	 	__int64 last_syn=0;
+	 	__int64 *apd;
+		unsigned char buffer[9];
+		bool first_syn = false;
+		while(fread(buffer,1,9,fpfixed)==9)
 		{
-			for(i = 0; i < syn_cnt-1;i ++)
-			{
-				for(k = 1; k < 3; k++)
-				{
-					for(j = cnt_tab[k]; j < apd_cnt[k]; j ++)
-					{
-						if(apd[k][j] < syn[i])
-						{
-							continue;
-						}
-						if(apd[k][j] > syn[i+1])
-						{
-							cnt_tab[k] = j;
-							break;
-						}
-						syn_apd_diff = apd[k][j] - syn[i];
-						
-						if(syn_apd_diff < 98*1000000 || syn_apd_diff >= (98+1)*1000000)
-						{
-							continue;
-						}
-						syn_apd_diff = syn_apd_diff / 100;
-						syn_apd_diff_cnt [syn_apd_diff]++;
-						cnt1++;
-					}
-				}
-			}
-			
-			free(syn);
-			free(apd[0]);
-			free(apd[1]);
-			free(apd[2]);
-			free(apd[3]);
-			syn_cnt = 0;
-			memset(cnt_tab,0,sizeof(int)*4);
-			memset(apd_cnt,0,sizeof(int)*4);
-			syn = (__int64 *)malloc(10003*8);
-			apd[0]=(__int64*)malloc(10*8);
-			apd[1]=(__int64*)malloc(10000*8);
-			apd[2]=(__int64*)malloc(10000*8);
-			apd[3]=(__int64*)malloc(10*8);
-			cnt2++;
-			continue;
-			//	break;
-		}
 		
-		if(buffer[0] == CHANNEL_SYN)
-		{
-			syn[syn_cnt] = *(__int64 *)(buffer +1);
-			syn_cnt ++;
-		}
-		else if(buffer[0] == 1 || buffer[0] == 2)
-		{
-			apd[buffer[0]][apd_cnt[buffer[0]]] = *(__int64*)(buffer + 1);
-			apd_cnt[buffer[0]]++;
-		}
-	}
-	
-	
-	for(i = 980000; i < 990000; i ++)
-	{
-		fprintf(fpsyn_apd,"%d \t %d\n",i,syn_apd_diff_cnt[i]);
-	}
-	free(syn_apd_diff_cnt);
-	
-	fclose(fpsyn_apd);
-	fclose(fpfixed);
-	free(syn);
-	free(apd[0]);
-	free(apd[1]);
-	free(apd[2]);
-	free(apd[3]);
-	m_edit_syn_apd_diff.Format("%s\r\n\r\n","SYN_APD count finished!");	
-	UpdateData(FALSE);
+			if(buffer[0]==CHANNEL_SYN)
+			{
+				last_syn = *(__int64*)(buffer + 1);
+				first_syn = true;
+				continue;
+			}
+			if(!first_syn)
+			{
+				continue;
+			}
+			if(buffer[0] == 1 || buffer[0] == 2)
+			{
+				syn_apd_diff = *(__int64*)(buffer + 1) - last_syn;
+				if(syn_apd_diff > 99*1000000 || syn_apd_diff < 98*1000000)
+				{
+					continue;
+				}
+				syn_apd_diff = syn_apd_diff/100;
+				syn_apd_diff_cnt[syn_apd_diff]++;
+			}
 
+		}
 
+		int i;
+		for(i = 980000; i <990000; i++ )
+		{
+			fprintf(fpsyn_apd,"%d\t%d\n",i,syn_apd_diff_cnt[i]);
+		}
+		fclose(fpsyn_apd);
+		fclose(fpfixed);
+		free(syn_apd_diff_cnt);
+		m_edit_syn_apd_diff.Format("%s\r\n\r\n","SYN_APD count finished!");	
+		UpdateData(FALSE);
+		
+		
 }

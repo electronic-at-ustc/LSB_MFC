@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "LSB_MFC.h"
-#include "LSB_MFCDlg.h"
+#include "LSB_MFCDlg.h" 
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
